@@ -25,6 +25,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.karumi.dexter.listener.single.PermissionListener;
+
+import java.util.List;
+
 import gov.nasa.worldwind.WorldWind;
 import gov.nasa.worldwind.WorldWindow;
 import gov.nasa.worldwind.geom.LookAt;
@@ -33,6 +44,7 @@ import gov.nasa.worldwind.geom.Position;
 import gov.nasa.worldwind.geom.Sector;
 import gov.nasa.worldwind.globe.BasicElevationCoverage;
 import gov.nasa.worldwind.layer.BackgroundLayer;
+import gov.nasa.worldwind.layer.BlueMarbleLandsatLayer;
 import gov.nasa.worldwind.layer.Layer;
 import gov.nasa.worldwind.layer.RenderableLayer;
 import gov.nasa.worldwind.ogc.WmsLayer;
@@ -43,7 +55,7 @@ import gov.nasa.worldwind.shape.PlacemarkAttributes;
 
 public class MapActivity extends AppCompatActivity implements SensorEventListener {
 
-    private static final String TAG = "ASPIS";
+    private static final String TAG = "ASPISLOG";
     private WorldWindow wwd;
     RelativeLayout wwdContainer;
 
@@ -57,7 +69,6 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
         public void onLocationChanged(Location location) {
             longitudeGPS = location.getLongitude();
             latitudeGPS = location.getLatitude();
-
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -88,36 +99,48 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
     private boolean shouldRotateScreen = false;
 
     ImageView compass;
-    TextView degrees;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
+        Dexter.withActivity(this)
+                .withPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .withListener(new MultiplePermissionsListener() {
+                    @Override
+                    public void onPermissionsChecked(MultiplePermissionsReport report) {
+                        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                        startReadingLocation();
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {
+
+                    }
+                })
+                .check();
+
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        compass = findViewById(R.id.mycompass);
-        degrees = findViewById(R.id.degrees);
+        compass = (ImageView) findViewById(R.id.mycompass);
 
-        wwdContainer = findViewById(R.id.mapview);
+        wwdContainer = (RelativeLayout) findViewById(R.id.mapview);
 
         // Create the WorldWindow (a GLSurfaceView) which displays the globe.
         this.wwd = new WorldWindow(this);
-        // Setup the WorldWindow's layers.
 
-        // Configure an OGC Web MapActivity Service (WMS) layer to display the
-        // sea surface temperature layer from NASA's Near Earth Observations WMS.
-        WmsLayerConfig config = new WmsLayerConfig();
+        /*WmsLayerConfig config = new WmsLayerConfig();
         config.serviceAddress = "https://worldwind27.arc.nasa.gov/wms/virtualearth";
         config.wmsVersion =  "1.1.1"; // NEO server works best with WMS 1.1.1
         config.layerNames = "ve"; // Sea surface temperature (MODIS)
         WmsLayer layer = new WmsLayer(new Sector().setFullSphere(), 1, config); // 1km resolution
 
         // Add the WMS layer to the WorldWindow.
-        wwd.getLayers().addLayer(layer);
-        //wwd.getLayers().addLayer(new BackgroundLayer());
+        wwd.getLayers().addLayer(layer);*/
 
+        //wwd.getLayers().addLayer(new BackgroundLayer());
+        wwd.getLayers().addLayer(new BlueMarbleLandsatLayer());
         this.wwd.getGlobe().getElevationModel().addCoverage(new BasicElevationCoverage());
 
         wwdContainer.addView(wwd);
@@ -127,12 +150,7 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
             Toast.makeText(MapActivity.this, "Location Permissions Not Set", Toast.LENGTH_SHORT).show();
         } else {
             startReadingLocation();
-            doStuff();
         }
-    }
-
-    public void doStuff(){
-
     }
 
     private void startReadingLocation() {
@@ -146,12 +164,14 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
             String provider = locationManager.getBestProvider(criteria, true);
             if (provider != null) {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG,"LOCATION PERMISSION ERROR");
                 }else{
                     Log.i(TAG,"STARTING LOCATION");
                     locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3 * 1000, 5, locationListenerBEST);
                 }
             }
         }else{
+            Log.i(TAG,"LOCATION NOT ENABLED");
             Toast.makeText(MapActivity.this, "Location Is Not Enabled",Toast.LENGTH_SHORT).show();
         }
     }
@@ -180,12 +200,12 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
         Placemark myPosition = new Placemark(
                 position,
                 PlacemarkAttributes
-                        .createWithImage(ImageSource.fromResource(R.drawable.me)).setImageScale(.3)
+                        .createWithImage(ImageSource.fromResource(R.drawable.poi_empty)).setImageScale(.1)
                         .setImageOffset(Offset.bottomCenter()), "Me");
 
         placemarksLayer.addRenderable(myPosition);
 
-         LookAt lookAt = new LookAt().set(position.latitude, position.longitude, 1, WorldWind.ABSOLUTE, 500 /*range*/, currentDegree /*heading*/, 0 /*tilt*/, 0 /*roll*/);
+         LookAt lookAt = new LookAt().set(position.latitude, position.longitude, 1, WorldWind.ABSOLUTE, 1000 /*range*/, currentDegree /*heading*/, 0 /*tilt*/, 0 /*roll*/);
          wwd.getNavigator().setAsLookAt(wwd.getGlobe(), lookAt);
     }
 
@@ -216,10 +236,6 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
         mSensorManager.unregisterListener(this);
     }
 
-    private void drawTeamate(Position position){
-
-    }
-
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         // get the angle around the z-axis rotated
@@ -230,7 +246,7 @@ public class MapActivity extends AppCompatActivity implements SensorEventListene
             if(shouldRotateScreen){
                 rotateMap(degree);
             }else{
-                degrees.setText(degree+"");
+                //degrees.setText(degree+"");
                 compass.setRotation(degree);
             }
         }

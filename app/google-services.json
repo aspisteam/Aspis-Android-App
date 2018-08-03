@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "53927207455",
+    "firebase_url": "https://outdoorteamassistant.firebaseio.com",
+    "project_id": "outdoorteamassistant",
+    "storage_bucket": "outdoorteamassistant.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:53927207455:android:954c1b7c138e94cd",
+        "android_client_info": {
+          "package_name": "com.georgekortsaridis.outdoorteamassistant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "53927207455-aeehqgj4epvvrbj1ttolq4gbjclgp7fh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-7vKGVWyf3oHf4Imhl1I3bgqjzKIh9Eg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
