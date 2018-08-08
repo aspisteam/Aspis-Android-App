@@ -29,4 +29,8 @@ dependencies {
     implementation 'gov.nasa.worldwind.android:worldwind:0.8.0'
     implementation 'com.karumi:dexter:4.1.0'
 
+    implementation 'com.google.firebase:firebase-core:16.0.1'
+    implementation 'com.google.firebase:firebase-database:16.0.1'
 }
+
+apply plugin: 'com.google.gms.google-services'
